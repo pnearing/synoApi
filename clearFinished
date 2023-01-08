@@ -6,9 +6,6 @@ import argparse
 from colours import colours
 
 
-# print(colors.bg.green, "SKk", colors.fg.red, "Amartya")
-# print(colors.bg.lightgrey, "SKk", colors.fg.red, "Amartya")
-
 def main(settings : dict[str, object]):
 
 # Create connection:
@@ -17,87 +14,183 @@ def main(settings : dict[str, object]):
                         port=settings['port'],
                         useSSL=settings['useSSL'],
                     )
+# Test connection:
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, " Testing connection...")
+    (success, errorCode, errorMessage) = connection.test()
+    if (success == False):
+        errorMessage = " Connection test failed. Error code: '%i'. Error Message: '%s'" % (errorCode, errorMessage)
+        print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+        exit(6)
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, "Connection test successful.")
 
+# Load api data:
+    apiInfo = synoApi.ApiInfo(connection)
+    
 
-
-
-    # connection.login()
-
-    # # dlStn = DownloadStation(connection)
-
-    # dlStn.updateTasks()
-
-    # for task in dlStn.tasks:
-    #     if (task.status == 'seeding'):
-    #         message = "Removing '%s'" % task.title
-    #         print(message)
-    #         # task.remove(forceComplete=False)
-    # connection.logout()
 
     return
-
-
 
 
 if __name__ == '__main__':
 # Create command line options:
     parser = argparse.ArgumentParser(prog='clearFinished', description='Clear all seeding downloads.', epilog="Made by Peter N.")
     parser.add_argument('-c', '--configFile', help='Path to config file. "DEFAULT=$HOME/.config/clearFinished/config.json"')
-    parser.add_argument('-H', '--hostName', help='Host name / IP of the server, overrides config.')
-    parser.add_argument('-p', '--port', help='Port number of the server, overrides config.')
-    parser.add_argument('-u', '--username', help='User name of the account, overrides config.')
-    parser.add_argument('-P', '--password', help='Password of the account, overrides config.')
+    parser.add_argument('-H', '--hostname', help='Host name / IP of the server.')
+    parser.add_argument('-p', '--port', help='Port number of the server.', type=int)
+    parser.add_argument('-u', '--username', help='User name of the account.')
+    parser.add_argument('-P', '--password', help='Password of the account.')
+    parser.add_argument('-s', '--ssl', help='Use SSL when connecting.', action='store_true')
 
     args = parser.parse_args()
 
-    print ("DEBUG!!!!!!!!!!!!!!!!!!!!!!!")
+# Verify args and set wether we're using commandline opts or config files:
+    usingConfigFile : bool
+    if (args.configFile != None):
+        usingConfigFile = True
+        if (args.hostname != None):
+            errorMessage = " Cannot use --hostName and --configFile at the same time."
+            print(colours.fg.red, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.port != None):
+            errorMessage = " Cannot use --port and --configFile at the same time."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.username != None):
+            errorMessage = " Cannot use --username and --configFile at the same time."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.password != None):
+            errorMessage = " Cannot use --password and --configFile at the same time."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.ssl != None):
+            errorMessage = " Cannot use --ssl and --configFile at the same time."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+    else:
+        usingConfigFile = False
+        if (args.hostname == None):
+            errorMessage = "--hostName must be supplied if not using config file."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.port == None):
+            errorMessage = "--port must be supplied if not using config file."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.username == None):
+            errorMessage = "--username must be supplied if not using config file."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.password == None):
+            errorMessage = "--password must be supplied if not using config file."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+        if (args.ssl == None):
+            errorMessage = "--ssl must be supplied if not using config file."
+            print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+            exit(3)
+
 # Create default config path:
     homePath = os.environ.get('HOME')
     defaultConfigFileName = 'config.json'
     defaultConfigPath = os.path.join(homePath, '.config', 'clearFinished')
     defaultConfigFilePath = os.path.join(defaultConfigPath, defaultConfigFileName)
 
-# Choose config file path:
-    defaultConfig : bool
-    if (args.configFile != None):
-        if (os.path.exists(args.configFile) == False):
-            configFilePath = args.configFile
-            defaultConfig = False
-        else:
-            print(colours.fg.red, colours.underline, 'ERROR:', colours.reset, " Config file '%s' not found.")
-            exit(1)
+# Load settings from config file path if requested.
+    settings : dict[str, object]
+
+# NOT using a config file:
+    if (usingConfigFile != True):
+        settings = {
+            'address': args.hostname,
+            'port': args.port,
+            'username': args.username,
+            'password': args.password,
+            'useSSL': args.ssl,
+        }
+
+# Using a config file:
     else:
-        configFilePath = defaultConfigFilePath
-        defaultConfig = True
-    print("Using configuration file: '%s'" % (configFilePath))
+    # Choose config file path if we're using a config file:
+        defaultConfig : bool
+        if (args.configFile != None):
+            if (os.path.exists(args.configFile) == False):
+                configFilePath = args.configFile
+                defaultConfig = False
+            else:
+                errorMessage = "Config file '%s' not found." % (args.configFile)
+                print(colours.fg.red, colours.underline, 'ERROR:', colours.reset, " ", errorMessage)
+                exit(3)
+        else:
+            configFilePath = defaultConfigFilePath
+            defaultConfig = True
+        message = "Using configuration file: '%s'" % (configFilePath)
+        print(colours.fg.green, colours.underline, "INFO:", message)
 
+    # Create default settings directory if it doesn't exist:
+        if (defaultConfig == True):
+            if (os.path.exists(configFilePath) == False):
+                os.makedirs(defaultConfigPath)
 
-# # Create settings directory if it doesn't exist:
-#     if (os.path.exists(defaultConfigPath) == False):
-#         os.makedirs(defaultConfigPath)
+    # If default config file doesn't exist create one:
+        config : dict[str, object]
+        if (defaultConfig == True and os.path.exists(configFilePath) == False):
+            config = {
+                "address": "127.0.0.1",
+                "port": 5001,# Choose config file path if we're using a config file:
+                "username": "admin",
+                "password": "changeMe",
+                "useSSL": True,
+            }
+            try:
+                fileHandle = open(configFilePath, 'w')
+            except PermissionError as e:
+                message = " Unable to create default configuration file '%s', permission error: %s" % (configFilePath, str(e.args))
+                print(colours.fg.orange, colours.underline, "WARNING:", colours.reset, message)
+                message = " Attempting to connect with defaults, this probably won't work."
+                print(colours.fg.orange, colours.underline, "WARNING:", colours.reset, message)
+            fileHandle = json.dumps(config, indent=4)
+            fileHandle.close()
+            settings = config
+        else:
+            try:
+                fileHandle = open(configFilePath, 'r')
+            except PermissionError as e:
+                errorMessage = " Unable to read configuration file '%s', permission error: %s" % (configFilePath, str(e.args))
+                print(colours.fg.red, colours.underline, "ERROR:", message)
+                exit(4)
+            try:
+                settings = json.loads(fileHandle.read())
+            except json.JSONDecodeError as e:
+                errorMessage = " Malformed JSON configuration: %s" % e.msg
+                print(colours.fg.red, colours.underline, "ERROR:", colours.reset, errorMessage)
+                exit(5)
+            fileHandle.close()
 
+# Display settings:
+    message = "Settings:"
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, message)
+    message = "    Address: '%s'" % (settings['address'])
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, message)
+    message = "    Port: '%s'" % (settings['port'])
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, message)
+    message = "    Username: '%s'" % (settings['username'])
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, message)
+    message = "    Password: '<REDACTED>'"
+    print(colours.fg.green, colours.underline, "INFO:", colours.reset, message)
 
+# Settings have been loaded. Start main.
+    main(settings)
 
+# Exit gracefully:
+    exit(0)
 
-
-# # Check for settings file and load it, and if it doesn't exist create one with sensible defaults.
-#     config : dict[str, object]
-#     if (os.path.exists(defaultConfigFilePath) == True):
-#         try:
-#             fileHandle = open(defaultConfigFilePath, 'r')
-#             config = json.loads(fileHandle.read())
-#         except:
-#             print("Invalid configuration file, ignoring.")
-#     else:
-#         print("Configuration file doesn't exist, creating one with some defaults, but probably won't work. Please edit.")
-#         config = {
-#             "address": "127.0.0.1",
-#             "port": 5001,
-#             "username": "admin",
-#             "password": "changeMe",
-#             "useSSL": True,
-#         }
-#         fileHandle = open(defaultConfigFilePath, 'w')
-#         fileHandle.write(json.dumps(config, indent=4))
-#     fileHandle.close()
-
+#########
+# Exit codes:
+#########
+# 0 = No error.
+# 1, 2 = argparse option error.
+# 3 = conflicting options.
+# 4 = unable to load config file.
+# 5 = Invalid json in config file.
+# 6 = Connection test failed.

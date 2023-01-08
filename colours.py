@@ -56,14 +56,14 @@ class colours(object):
 # 8 bit colour (255 colours):
     @staticmethod
     def fg8bit(n:int) -> str:
-        if (n not in range(255)):
+        if (n not in range(256)):
             errorMessage = "Value out of range: 0-255"
             raise ValueError(errorMessage)
         return '\033[38;5;%im' % (n)
     
     @staticmethod
     def bg8bit(n:int) -> str:
-        if (n not in range(255)):
+        if (n not in range(256)):
             errorMessage = "Value out of range: 0-255"
             raise ValueError(errorMessage)
         return '\033[48;5;%im' % (n)
@@ -96,9 +96,18 @@ class colours(object):
 
 if __name__ == '__main__':
 # 4 bit colour:
-    print(colours.fg.red, "This", " is", colours.bg.darkgrey, " a", colours.strikethrough, " test", colours.reset)
+    print("4 bit colour test:")
+    print(colours.fg.red, "This", " is", colours.bg.darkgrey, " a", colours.strikethrough, " test", colours.reset, "\n")
 # 8 bit colour:
-    print(colours.fg8bit(9), "This", colours.reset, " is ", colours.bg8bit(213), "a test", colours.reset)
+    print("8 bit colour test:")
+    for i in range(256):
+        print(colours.fg8bit(i), '\u2588', end='')
+    print(colours.reset)
 # 16 bit colour:
-    print(colours.fgrgb(255,0,0), "This", colours.reset, " is ", colours.bgrgb(0, 255, 0), colours.underline, " a test", colours.reset)
+    print("16 bit colour test:")
+    for r in range(0, 256, 10):
+        for g in range(0, 256, 10):
+            for b in range(0, 256, 10):
+                print(colours.fgrgb(r,g,b), '\u2588', end='')
+    print(colours.reset)
     exit(0)
