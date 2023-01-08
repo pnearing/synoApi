@@ -1,2 +1,2 @@
-# synoApi
- API for synology NAS
+# downloadStationApi
+ Python api for download station
