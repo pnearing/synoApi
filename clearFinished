@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+import os
+import json
+import synoApi
+import argparse
+from colours import colours
+
+
+# print(colors.bg.green, "SKk", colors.fg.red, "Amartya")
+# print(colors.bg.lightgrey, "SKk", colors.fg.red, "Amartya")
+
+def main(settings : dict[str, object]):
+
+# Create connection:
+    connection = synoApi.Connection(
+                        address=settings['address'],
+                        port=settings['port'],
+                        useSSL=settings['useSSL'],
+                    )
+
+
+
+
+    # connection.login()
+
+    # # dlStn = DownloadStation(connection)
+
+    # dlStn.updateTasks()
+
+    # for task in dlStn.tasks:
+    #     if (task.status == 'seeding'):
+    #         message = "Removing '%s'" % task.title
+    #         print(message)
+    #         # task.remove(forceComplete=False)
+    # connection.logout()
+
+    return
+
+
+
+
+if __name__ == '__main__':
+# Create command line options:
+    parser = argparse.ArgumentParser(prog='clearFinished', description='Clear all seeding downloads.', epilog="Made by Peter N.")
+    parser.add_argument('-c', '--configFile', help='Path to config file. "DEFAULT=$HOME/.config/clearFinished/config.json"')
+    parser.add_argument('-H', '--hostName', help='Host name / IP of the server, overrides config.')
+    parser.add_argument('-p', '--port', help='Port number of the server, overrides config.')
+    parser.add_argument('-u', '--username', help='User name of the account, overrides config.')
+    parser.add_argument('-P', '--password', help='Password of the account, overrides config.')
+
+    args = parser.parse_args()
+
+    print ("DEBUG!!!!!!!!!!!!!!!!!!!!!!!")
+# Create default config path:
+    homePath = os.environ.get('HOME')
+    defaultConfigFileName = 'config.json'
+    defaultConfigPath = os.path.join(homePath, '.config', 'clearFinished')
+    defaultConfigFilePath = os.path.join(defaultConfigPath, defaultConfigFileName)
+
+# Choose config file path:
+    defaultConfig : bool
+    if (args.configFile != None):
+        if (os.path.exists(args.configFile) == False):
+            configFilePath = args.configFile
+            defaultConfig = False
+        else:
+            print(colours.fg.red, colours.underline, 'ERROR:', colours.reset, " Config file '%s' not found.")
+            exit(1)
+    else:
+        configFilePath = defaultConfigFilePath
+        defaultConfig = True
+    print("Using configuration file: '%s'" % (configFilePath))
+
+
+# # Create settings directory if it doesn't exist:
+#     if (os.path.exists(defaultConfigPath) == False):
+#         os.makedirs(defaultConfigPath)
+
+
+
+
+
+# # Check for settings file and load it, and if it doesn't exist create one with sensible defaults.
+#     config : dict[str, object]
+#     if (os.path.exists(defaultConfigFilePath) == True):
+#         try:
+#             fileHandle = open(defaultConfigFilePath, 'r')
+#             config = json.loads(fileHandle.read())
+#         except:
+#             print("Invalid configuration file, ignoring.")
+#     else:
+#         print("Configuration file doesn't exist, creating one with some defaults, but probably won't work. Please edit.")
+#         config = {
+#             "address": "127.0.0.1",
+#             "port": 5001,
+#             "username": "admin",
+#             "password": "changeMe",
+#             "useSSL": True,
+#         }
+#         fileHandle = open(defaultConfigFilePath, 'w')
+#         fileHandle.write(json.dumps(config, indent=4))
+#     fileHandle.close()
+
